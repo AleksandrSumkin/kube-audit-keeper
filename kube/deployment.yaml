@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-audit-keeper
+  labels:
+    app: kube-audit-keeper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kube-audit-keeper
+  template:
+    metadata:
+      labels:
+        app: kube-audit-keeper
+    spec:
+      hostPID: true
+      containers:
+        - name: kube-audit-keeper
+          image: docker.io/library/kube-audit-keeper:0.0.1
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: custom-config
+              mountPath: "/config/kube"
+              readOnly: true
+            - name: current-config
+              mountPath: "/etc/kubernetes"
+          args:
+            - -c /etc/kubernetes/audit-policy.yaml
+            - -g /config/kube/audit-policy.yaml
+            - -t 60
+      volumes:
+        - name: custom-config
+          configMap:
+            name: kube-audit-keeper
+        - name: current-config
+          hostPath:
+            path: /etc/kubernetes
+            type: Directory
